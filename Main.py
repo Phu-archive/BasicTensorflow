@@ -43,3 +43,15 @@ with tf.variable_scope("cost"):
 
 with tf.variable_scope("train"):
     optimizer = tf.train.AdadeltaOptimizer(learning_rate).minimize(cost)
+
+
+# Training Loop
+with tf.Session() as session:
+    session.run(tf.global_variables_initializer())
+
+    for epoch in range(training_epochs):
+        train_batch_data, train_batch_labels = mnist.train.next_batch(batch_size)
+        session.run(optimizer, feed_dict={X: train_batch_data, Y: train_batch_labels})
+
+        print("Training: ", epoch)
+print("Training Complete")
