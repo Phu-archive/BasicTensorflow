@@ -3,7 +3,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 
-learning_rate = 0.001
+learning_rate = 0.5
 training_epochs = 1000
 batch_size = 64
 
@@ -44,14 +44,30 @@ with tf.variable_scope("cost"):
 with tf.variable_scope("train"):
     optimizer = tf.train.AdadeltaOptimizer(learning_rate).minimize(cost)
 
+with tf.variable_scope("log"):
+    tf.summary.scalar("Current_Cost", cost)
+    summary = tf.summary.merge_all()
 
 # Training Loop
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
 
+    training_writer = tf.summary.FileWriter('logs/training', session.graph)
+    testing_writer = tf.summary.FileWriter('logs/testing', session.graph)
+
     for epoch in range(training_epochs):
         train_batch_data, train_batch_labels = mnist.train.next_batch(batch_size)
-        session.run(optimizer, feed_dict={X: train_batch_data, Y: train_batch_labels})
+        test_batch_data, test_batch_labels = mnist.test.next_batch(batch_size)
 
-        print("Training: ", epoch)
+        session.run(optimizer, feed_dict={X: train_batch_data, Y: train_batch_labels})
+        if epoch % 5 == 0:
+            training_cost, training_summary = session.run([cost, summary], feed_dict={X: train_batch_data, Y: train_batch_labels})
+            testing_cost, testing_summary = session.run([cost, summary], feed_dict={X: test_batch_data, Y: test_batch_labels})
+
+            # Save To Log File
+            training_writer.add_summary(training_summary, epoch)
+            testing_writer.add_summary(testing_summary, epoch)
+
+            print("Training Cost: ", training_cost, " Testing Cost: ", testing_cost)
+
 print("Training Complete")
