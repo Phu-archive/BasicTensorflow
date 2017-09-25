@@ -71,7 +71,8 @@ with tf.Session() as session:
                                                                                       Y: train_batch_labels})
             testing_cost, testing_summary = session.run([cost, summary], feed_dict={X: test_batch_data,
                                                                                     Y: test_batch_labels})
-            acc, accuracy_summary = session.run([accuracy, summary], feed_dict={X: mnist.test.images, Y: mnist.test.labels})
+            acc, accuracy_summary = session.run([accuracy, summary], feed_dict={X: mnist.test.images,
+                                                                                Y: mnist.test.labels})
 
             # Save To Log File
             training_writer.add_summary(training_summary, epoch)
@@ -80,4 +81,6 @@ with tf.Session() as session:
 
             print("Training Cost: ", training_cost, " Testing Cost: ", testing_cost, " Accuracy: ", acc)
 
-print("Training Complete")
+    final_accuracy = session.run(accuracy, feed_dict={X: mnist.test.images, Y: mnist.test.labels})
+
+print("Training Complete with: ", final_accuracy, " accuracy.")
