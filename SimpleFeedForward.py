@@ -57,9 +57,9 @@ with tf.variable_scope("log"):
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
 
-    training_writer = tf.summary.FileWriter('logs/training', session.graph)
-    testing_writer = tf.summary.FileWriter('logs/testing', session.graph)
-    accuracy_writer = tf.summary.FileWriter('logs/accuracy', session.graph)
+    training_writer = tf.summary.FileWriter('LogsFeedForward/training', session.graph)
+    testing_writer = tf.summary.FileWriter('LogsFeedForward/testing', session.graph)
+    accuracy_writer = tf.summary.FileWriter('LogsFeedForward/accuracy', session.graph)
 
     for epoch in range(training_epochs):
         train_batch_data, train_batch_labels = mnist.train.next_batch(batch_size)
