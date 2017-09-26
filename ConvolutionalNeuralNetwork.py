@@ -103,6 +103,7 @@ with tf.variable_scope("Log"):
     tf.summary.scalar("Accuracy", accuracy)
     summary = tf.summary.merge_all()
 
+saver = tf.train.Saver()
 # Training Loop
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
@@ -131,6 +132,10 @@ with tf.Session() as sess:
             accuracy_writer.add_summary(accuracy_summary, epoch)
 
             print("Training Cost: ", training_cost, " Testing Cost: ", testing_cost, " Accuracy: ", acc)
+
+        if epoch % 100 == 0:
+            print("Saving the model.")
+            save_path = saver.save(sess, "../saveCNN/trained_model" + str(epoch) + ".ckpt")
 
     final_accuracy = sess.run(accuracy, feed_dict={X: mnist.test.images, Y: mnist.test.labels})
 
