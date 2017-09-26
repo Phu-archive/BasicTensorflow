@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
-mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+mnist = input_data.read_data_sets("../MNIST_data/", one_hot=True)
 
 learning_rate = 0.5
 training_epochs = 1000
@@ -47,46 +47,11 @@ with tf.variable_scope("accuracy"):
     correct_prediction = tf.equal(tf.argmax(output, 1), tf.argmax(Y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-with tf.variable_scope("train"):
-    optimizer = tf.train.AdadeltaOptimizer(learning_rate).minimize(cost)
-
-with tf.variable_scope("log"):
-    tf.summary.scalar("Current_Cost", cost)
-    tf.summary.scalar("Accuracy", accuracy)
-    summary = tf.summary.merge_all()
 
 saver = tf.train.Saver()
-# Training Loop
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
-
-    training_writer = tf.summary.FileWriter('LogsFeedForward/training', session.graph)
-    testing_writer = tf.summary.FileWriter('LogsFeedForward/testing', session.graph)
-    accuracy_writer = tf.summary.FileWriter('LogsFeedForward/accuracy', session.graph)
-
-    for epoch in range(training_epochs):
-        train_batch_data, train_batch_labels = mnist.train.next_batch(batch_size)
-        test_batch_data, test_batch_labels = mnist.test.next_batch(batch_size)
-
-        session.run(optimizer, feed_dict={X: train_batch_data, Y: train_batch_labels})
-        if epoch % 5 == 0:
-            training_cost, training_summary = session.run([cost, summary], feed_dict={X: train_batch_data,
-                                                                                      Y: train_batch_labels})
-            testing_cost, testing_summary = session.run([cost, summary], feed_dict={X: test_batch_data,
-                                                                                    Y: test_batch_labels})
-            acc, accuracy_summary = session.run([accuracy, summary], feed_dict={X: mnist.test.images,
-                                                                                Y: mnist.test.labels})
-
-            # Save To Log File
-            training_writer.add_summary(training_summary, epoch)
-            testing_writer.add_summary(testing_summary, epoch)
-            accuracy_writer.add_summary(accuracy_summary, epoch)
-
-            print("Training Cost: ", training_cost, " Testing Cost: ", testing_cost, " Accuracy: ", acc)
-
-    save_path = saver.save(session, 'saveFeedForward/trained_model.ckpt')
-    print("Model Saved")
-
+    saver.restore(session, "../saveFeedForward/trained_model.ckpt")
     final_accuracy = session.run(accuracy, feed_dict={X: mnist.test.images, Y: mnist.test.labels})
+    print("Fianl Accuracy: ", final_accuracy)
 
-print("Training Complete with: ", final_accuracy, " accuracy.")
