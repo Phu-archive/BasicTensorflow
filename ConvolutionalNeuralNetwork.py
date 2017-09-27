@@ -36,7 +36,7 @@ dropout_prob = tf.placeholder(tf.float32, shape=[], name="DropoutProb")
 
 # ----------------------------------------
 
-if os.path.exists("saveCNN"):
+if not os.path.exists("saveCNN"):
     os.makedirs("saveCNN")
 
 
