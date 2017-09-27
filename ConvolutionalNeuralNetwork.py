@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
+import os
 
 mnist = input_data.read_data_sets("../MNIST_data/", one_hot=True)
 
@@ -116,9 +117,9 @@ saver = tf.train.Saver()
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
 
-    training_writer = tf.summary.FileWriter("../LogsCNN/training", sess.graph)
-    testing_writer = tf.summary.FileWriter("../LogsCNN/testing", sess.graph)
-    accuracy_writer = tf.summary.FileWriter("../LogsCNN/accuracy", sess.graph)
+    training_writer = tf.summary.FileWriter("/output/training_log", sess.graph)
+    testing_writer = tf.summary.FileWriter("/output/testing_log", sess.graph)
+    accuracy_writer = tf.summary.FileWriter("/output/accuracy_log", sess.graph)
 
     for epoch in range(training_epochs):
         train_batch_data, train_batch_labels = mnist.train.next_batch(batch_size)
@@ -143,7 +144,7 @@ with tf.Session() as sess:
 
         if epoch % 100 == 0:
             print("Saving the model.")
-            save_path = saver.save(sess, "../saveCNN/trained_model" + str(epoch) + ".ckpt")
+            save_path = saver.save(sess, "/output/trained_model" + str(epoch) + ".ckpt")
 
     final_accuracy = sess.run(accuracy, feed_dict={X: mnist.test.images, Y: mnist.test.labels})
 
