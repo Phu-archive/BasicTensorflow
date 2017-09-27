@@ -40,52 +40,59 @@ with tf.variable_scope("Input"):
     input_conv = tf.reshape(X, [-1, image_size, image_size, channel_size])
 
 with tf.variable_scope("Conv1"):
-    conv1 = tf.layers.conv2d(inputs=input_conv,
-                             filters=conv_layer_1_num_filter,
-                             kernel_size=[conv_layer_1_filter_size, conv_layer_1_filter_size],
-                             padding="same",
-                             activation=tf.nn.relu)
+    weight = tf.Variable(tf.truncated_normal([conv_layer_1_filter_size, conv_layer_1_filter_size, channel_size, conv_layer_1_num_filter]
+                                             , stddev=0.05))
+    bias = tf.Variable(tf.constant(0.05, shape=[conv_layer_1_num_filter]))
+
+    conv1 = tf.nn.conv2d(input=input_conv, filter=weight, strides=[1, 1, 1, 1], padding="SAME")
+    out_conv1 = conv1 + bias
+
 
 with tf.variable_scope("Pooling1"):
-    pool1 = tf.layers.max_pooling2d(inputs=conv1,
-                                    pool_size=[pooling_layer_1_filter_size, pooling_layer_1_filter_size],
-                                    strides=pooling_layer_1_stride)
+    pool1 = tf.nn.max_pool(value=out_conv1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+
+with tf.variable_scope("Layer1"):
+    layer1 = tf.nn.relu(pool1)
 
 with tf.variable_scope("Conv2"):
-    conv2 = tf.layers.conv2d(inputs=pool1,
-                             filters=conv_layer_2_num_filter,
-                             kernel_size=[conv_layer_2_filter_size, conv_layer_2_filter_size],
-                             padding="same",
-                             activation=tf.nn.relu)
+    weight2 = tf.Variable(tf.truncated_normal([conv_layer_2_filter_size, conv_layer_2_filter_size, conv_layer_1_num_filter, conv_layer_2_num_filter],
+                                              stddev=0.05))
+    bias2 = tf.Variable(tf.constant(0.05, shape=[conv_layer_2_num_filter]))
+
+    conv2 = tf.nn.conv2d(input=layer1, filter=weight2, strides=[1, 1, 1, 1], padding="SAME")
+    out_conv2 = conv2 + bias2
 
 with tf.variable_scope("Pool2"):
-    pool2 = tf.layers.max_pooling2d(inputs=conv2,
-                                    pool_size=[pooling_layer_2_filter_size, pooling_layer_2_filter_size],
-                                    strides=pooling_layer_1_stride)
+    pool2 = tf.nn.max_pool(value=out_conv1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
+
+with tf.variable_scope("Layer2"):
+    layer2 = tf.nn.relu(pool2)
 
 with tf.variable_scope("Flatten"):
-    pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64])
+    layer_shape = layer2.get_shape()
+    num_features = layer_shape[1:4].num_elements()
+    flatten = tf.reshape(layer2, [-1, num_features])
 
 with tf.variable_scope("FullyConnected1"):
-    dense1 = tf.layers.dense(inputs=pool2_flat,
-                             units=fully_connected_layer_1,
-                             activation=tf.nn.relu)
+    weight3 = tf.Variable(tf.truncated_normal(shape=[num_features, fully_connected_layer_1], stddev=0.05))
+    bias3 = tf.Variable(tf.constant(0.05, shape=[fully_connected_layer_1]))
 
-    dropout1 = tf.layers.dropout(inputs=dense1, rate=dropout_prob)
+    pre_activation_layer1 = tf.matmul(flatten, weight3) + bias3
+    fc_layer1 = tf.nn.relu(pre_activation_layer1)
 
 with tf.variable_scope("FullyConnected2"):
-    dense2 = tf.layers.dense(inputs=dropout1,
-                             units=fully_connected_layer_2,
-                             activation=tf.nn.relu)
+    weight4 = tf.Variable(tf.truncated_normal(shape=[fully_connected_layer_1, fully_connected_layer_2], stddev=0.05))
+    bias4 = tf.Variable(tf.constant(0.05, shape=[fully_connected_layer_2]))
 
-    dropout2 = tf.layers.dropout(inputs=dense2, rate=dropout_prob)
+    pre_activation_layer2 = tf.matmul(fc_layer1, weight4) + bias4
+    fc_layer2 = tf.nn.relu(pre_activation_layer2)
 
 with tf.variable_scope("FullyConnected3"):
-    dense3 = tf.layers.dense(inputs=dropout2,
-                             units=class_size,
-                             activation=tf.nn.relu)
+    weight5 = tf.Variable(tf.truncated_normal(shape=[fully_connected_layer_2, class_size], stddev=0.05))
+    bias5 = tf.Variable(tf.constant(0.05, shape=[class_size]))
 
-    output = tf.nn.softmax(dense3)
+    pre_activation_layer3 = tf.matmul(fc_layer2, weight5) + bias5
+    output = tf.nn.softmax(pre_activation_layer3)
 
 with tf.variable_scope("Loss"):
     Y = tf.placeholder(tf.float32, shape=[None, class_size])
@@ -104,6 +111,7 @@ with tf.variable_scope("Log"):
     summary = tf.summary.merge_all()
 
 saver = tf.train.Saver()
+
 # Training Loop
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
@@ -125,7 +133,7 @@ with tf.Session() as sess:
             training_cost, training_summary = sess.run([cost, summary], feed_dict=display_feed_dict)
             testing_cost, testing_summary = sess.run([cost, summary], feed_dict=display_feed_dict)
             acc, accuracy_summary = sess.run([accuracy, summary], feed_dict={X: mnist.test.images,
-                                                                             Y: mnist.test.labels})
+                                                                             Y: mnist.test.labels, dropout_prob: 0})
 
             training_writer.add_summary(training_summary, epoch)
             testing_writer.add_summary(testing_summary, epoch)
