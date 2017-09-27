@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
+import os
 
 mnist = input_data.read_data_sets("../MNIST_data/", one_hot=True)
 
@@ -34,6 +35,10 @@ fully_connected_layer_2 = 256
 dropout_prob = tf.placeholder(tf.float32, shape=[], name="DropoutProb")
 
 # ----------------------------------------
+
+if os.path.exists("saveCNN"):
+    os.makedirs("saveCNN")
+
 
 with tf.variable_scope("Input"):
     X = tf.placeholder(tf.float32, shape=[None, input_size])
@@ -143,7 +148,7 @@ with tf.Session() as sess:
 
         if epoch % 100 == 0:
             print("Saving the model.")
-            save_path = saver.save(sess, "../saveCNN/trained_model" + str(epoch) + ".ckpt")
+            save_path = saver.save(sess, "/saveCNN/trained_model" + str(epoch) + ".ckpt")
 
     final_accuracy = sess.run(accuracy, feed_dict={X: mnist.test.images, Y: mnist.test.labels})
 
