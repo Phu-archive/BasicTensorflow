@@ -98,53 +98,13 @@ with tf.variable_scope("Loss"):
     Y = tf.placeholder(tf.float32, shape=[None, class_size])
     cost = tf.reduce_mean(-tf.reduce_sum(Y * tf.log(output), reduction_indices=[1]))
 
-with tf.variable_scope("Optimizer"):
-    optimizer = tf.train.AdamOptimizer().minimize(cost)
-
 with tf.variable_scope("Accuracy"):
     correct_prediction = tf.equal(tf.argmax(output, 1), tf.argmax(Y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-with tf.variable_scope("Log"):
-    tf.summary.scalar("Current_Cost", cost)
-    tf.summary.scalar("Accuracy", accuracy)
-    summary = tf.summary.merge_all()
-
 saver = tf.train.Saver()
-
-# Training Loop
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-
-    training_writer = tf.summary.FileWriter("../LogsCNN/training", sess.graph)
-    testing_writer = tf.summary.FileWriter("../LogsCNN/testing", sess.graph)
-    accuracy_writer = tf.summary.FileWriter("../LogsCNN/accuracy", sess.graph)
-
-    for epoch in range(training_epochs):
-        train_batch_data, train_batch_labels = mnist.train.next_batch(batch_size)
-        test_batch_data, test_batch_labels = mnist.test.next_batch(batch_size)
-
-        sess.run(optimizer, feed_dict={X: train_batch_data,
-                                       Y: train_batch_labels,
-                                       dropout_prob: dropout_prob_base})
-
-        display_feed_dict = {X: train_batch_data, Y: train_batch_labels, dropout_prob: 0}
-        if epoch % 5 == 0:
-            training_cost, training_summary = sess.run([cost, summary], feed_dict=display_feed_dict)
-            testing_cost, testing_summary = sess.run([cost, summary], feed_dict=display_feed_dict)
-            acc, accuracy_summary = sess.run([accuracy, summary], feed_dict={X: mnist.test.images,
-                                                                             Y: mnist.test.labels, dropout_prob: 0})
-
-            training_writer.add_summary(training_summary, epoch)
-            testing_writer.add_summary(testing_summary, epoch)
-            accuracy_writer.add_summary(accuracy_summary, epoch)
-
-            print("Training Cost: ", training_cost, " Testing Cost: ", testing_cost, " Accuracy: ", acc)
-
-        if epoch % 100 == 0:
-            print("Saving the model.")
-            save_path = saver.save(sess, "../saveCNN/trained_model.ckpt")
-
-    final_accuracy = sess.run(accuracy, feed_dict={X: mnist.test.images, Y: mnist.test.labels})
-
-print("Training Complete with: ", final_accuracy, " accuracy.")
+with tf.Session() as session:
+    session.run(tf.global_variables_initializer())
+    saver.restore(session, "../saveCNN/trained_model900.ckpt")
+    final_accuracy = session.run(accuracy, feed_dict={X: mnist.test.images, Y: mnist.test.labels})
+    print("Fianl Accuracy: ", final_accuracy)
